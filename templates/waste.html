@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Szambo - monitoring</title>
+<meta http-equiv="refresh" content="60">
+<link rel="stylesheet" href="/static/style.css?v=16">
+</head>
+<body>
+<nav>
+  <a href="/" class="active">Szambo</a>
+  <a href="/rainwater">Deszczówka</a>
+  <a href="/diagnostics">Diagnostyka</a>
+  <a href="/settings">Ustawienia</a>
+</nav>
+<div class="hero-grid">
+  <div class="tank-card">
+    <h2>Szambo</h2>
+    <div class="tank-top"></div>
+    <div class="tank">
+      <div class="water water-waste" style="height: $waste_pct_num%"></div>
+      <div class="percent">$waste_pct%</div>
+    </div>
+    <div class="details">
+    Poziom: $waste_level_cm cm (~$waste_liters l)
+      $waste_min_line
+    </div>
+    $waste_error
+    $waste_status
+  </div>
+  <div class="sidebar">
+    <div class="sidebar-columns">
+      <div class="sidebar-left">
+        $waste_daily_stat
+        <div class="section">
+          $pumpout_estimate
+        </div>
+      </div>
+      <div class="sidebar-right">
+        <div class="section">
+          <h3 style="color:#a67c52;">Wizyty szambowozu</h3>
+          $pumpout_list
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="range-bar">
+  <button onclick="changeRange('24h')" class="$active_24h" data-range="24h">24h</button>
+  <button onclick="changeRange('7d')" class="$active_7d" data-range="7d">7 dni</button>
+  <button onclick="changeRange('30d')" class="$active_30d" data-range="30d">30 dni</button>
+  <button onclick="changeRange('365d')" class="$active_365d" data-range="365d">Rok</button>
+</div>
+<div class="charts-grid">
+  <div class="chart-container">
+    <h2>Napełnienie (%)</h2>
+    <div id="chart-waste-svg">$waste_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2 id="chart-waste-daily-title">$waste_daily_title</h2>
+    <div id="chart-waste-daily-svg">$waste_daily_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2>Średnie zużycie wg dnia tygodnia</h2>
+    <div id="chart-waste-weekday-svg">$waste_weekday_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2>Koszty ($pumpout_cost_pln zł / wywóz)</h2>
+    $pumpout_costs_table
+  </div>
+</div>
+<script>
+function changeRange(range) {
+  document.querySelectorAll('.range-bar button').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.range === range);
+  });
+  fetch('/api/charts?page=waste&range=' + range)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('chart-waste-svg').innerHTML = data.waste_svg;
+      document.getElementById('chart-waste-daily-svg').innerHTML = data.waste_daily_svg;
+      document.getElementById('chart-waste-daily-title').textContent = data.waste_daily_title;
+      document.getElementById('chart-waste-weekday-svg').innerHTML = data.waste_weekday_svg;
+      history.replaceState(null, '', '/?range=' + range);
+    });
+}
+</script>
+</body>
+</html>

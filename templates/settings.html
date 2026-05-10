@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ustawienia - monitoring</title>
+<link rel="stylesheet" href="/static/style.css?v=16">
+</head>
+<body>
+<nav>
+  <a href="/">Szambo</a>
+  <a href="/rainwater">Deszczówka</a>
+  <a href="/diagnostics">Diagnostyka</a>
+  <a href="/settings" class="active">Ustawienia</a>
+</nav>
+<div class="settings-page">
+  <h1>Ustawienia</h1>
+  $save_msg
+  <form method="POST" action="/settings">
+
+  <fieldset>
+    <legend>Czujniki</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="sensor_rain_ip">IP czujnika deszczówki</label>
+        <input type="text" id="sensor_rain_ip" name="sensor_rain_ip" value="$sensor_rain_ip">
+      </div>
+      <div class="form-group">
+        <label for="sensor_waste_ip">IP czujnika szamba</label>
+        <input type="text" id="sensor_waste_ip" name="sensor_waste_ip" value="$sensor_waste_ip">
+      </div>
+      <div class="form-group">
+        <label for="measure_interval">Interwał pomiaru (s)
+          <span class="tooltip" data-tip="Co ile sekund serwer odpytuje czujniki i zapisuje pomiar do CSV">?</span>
+        </label>
+        <input type="number" id="measure_interval" name="measure_interval" value="$measure_interval" min="10" step="1">
+      </div>
+      <div class="form-group">
+        <label for="sensor_read_count">Odczyty na pomiar
+          <span class="tooltip" data-tip="Ile razy odpytać czujnik i wziąć medianę. Eliminuje jednorazowe spike'i">?</span>
+        </label>
+        <input type="number" id="sensor_read_count" name="sensor_read_count" value="$sensor_read_count" min="1" max="15" step="2">
+      </div>
+      <div class="form-group">
+        <label for="sensor_read_delay">Odstęp między odczytami (s)
+          <span class="tooltip" data-tip="Czas pauzy między kolejnymi odczytami czujnika w ramach jednego pomiaru. Przy 5 odczytach co 2s pomiar trwa ~8s">?</span>
+        </label>
+        <input type="number" id="sensor_read_delay" name="sensor_read_delay" value="$sensor_read_delay" min="1" max="5" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Zbiorniki</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="tank_depth_cm">Głębokość zbiornika (cm)
+          <span class="tooltip" data-tip="Odległość od czujnika do dna zbiornika. Służy do przeliczania odczytu czujnika na procent napełnienia">?</span>
+        </label>
+        <input type="number" id="tank_depth_cm" name="tank_depth_cm" value="$tank_depth_cm" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="tank_capacity_l">Pojemność zbiornika (l)</label>
+        <input type="number" id="tank_capacity_l" name="tank_capacity_l" value="$tank_capacity_l" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="sensor_min_distance_cm">Min. odległość czujnika (cm)
+          <span class="tooltip" data-tip="Minimalna odległość, przy której czujnik jeszcze mierzy poprawnie. Poniżej tej wartości wyświetlane jest ostrzeżenie">?</span>
+        </label>
+        <input type="number" id="sensor_min_distance_cm" name="sensor_min_distance_cm" value="$sensor_min_distance_cm" min="0" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Filtrowanie odczytów</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="spike_threshold_cm">Próg spike'a (cm)
+          <span class="tooltip" data-tip="Jednorazowy skok odczytu większy niż ta wartość zostanie odrzucony jako błąd czujnika i zastąpiony medianą">?</span>
+        </label>
+        <input type="number" id="spike_threshold_cm" name="spike_threshold_cm" value="$spike_threshold_cm" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="sensor_noise_cm">Szum czujnika (cm)
+          <span class="tooltip" data-tip="Tolerancja szumu. Wahania mniejsze niż ta wartość nie są traktowane jako zmiana trendu (typowo +-1 cm)">?</span>
+        </label>
+        <input type="number" id="sensor_noise_cm" name="sensor_noise_cm" value="$sensor_noise_cm" min="0" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Szambo — detekcja szambowozu</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="pumpout_cost_pln">Koszt wywozu (zł)</label>
+        <input type="number" id="pumpout_cost_pln" name="pumpout_cost_pln" value="$pumpout_cost_pln" min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label for="pumpout_drop_pct">Min. spadek do wykrycia (%)
+          <span class="tooltip" data-tip="Minimalny spadek napełnienia w oknie detekcji, żeby uznać że przyjechał szambowóz">?</span>
+        </label>
+        <input type="number" id="pumpout_drop_pct" name="pumpout_drop_pct" value="$pumpout_drop_pct" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="pumpout_window_min">Okno detekcji (min)
+          <span class="tooltip" data-tip="Przedział czasu, w którym musi nastąpić spadek napełnienia, żeby wykryć szambowóz">?</span>
+        </label>
+        <input type="number" id="pumpout_window_min" name="pumpout_window_min" value="$pumpout_window_min" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="pumpout_estimate_pct">Próg estymacji zapełnienia (%)
+          <span class="tooltip" data-tip="Przy jakim procencie napełnienia system sugeruje wezwanie szambowozu. Estymacja liczy kiedy zbiornik osiągnie ten poziom">?</span>
+        </label>
+        <input type="number" id="pumpout_estimate_pct" name="pumpout_estimate_pct" value="$pumpout_estimate_pct" min="50" max="100" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Deszczówka — detekcja pompowania</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="rain_pump_drop_pct">Min. spadek do wykrycia (%)
+          <span class="tooltip" data-tip="Minimalny spadek poziomu deszczówki w oknie detekcji, żeby uznać że pompa pracuje">?</span>
+        </label>
+        <input type="number" id="rain_pump_drop_pct" name="rain_pump_drop_pct" value="$rain_pump_drop_pct" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="rain_pump_window_min">Okno detekcji (min)
+          <span class="tooltip" data-tip="W ciągu ilu minut musi nastąpić spadek, żeby wykryć start pompowania">?</span>
+        </label>
+        <input type="number" id="rain_pump_window_min" name="rain_pump_window_min" value="$rain_pump_window_min" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="rain_pump_stable_count">Odczyty stabilne do zakończenia
+          <span class="tooltip" data-tip="Ile kolejnych odczytów bez spadku oznacza koniec pompowania. Zapobiega przedwczesnemu zakończeniu przy chwilowej stabilizacji">?</span>
+        </label>
+        <input type="number" id="rain_pump_stable_count" name="rain_pump_stable_count" value="$rain_pump_stable_count" min="1" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — przepełnienie szamba</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_waste_high_enabled" value="1" $alert_waste_high_enabled_checked>
+          Włączone
+          <span class="tooltip" data-tip="Włącza/wyłącza alerty email o przepełnieniu szamba">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="alert_waste_high_warning_pct">Warning (%)
+          <span class="tooltip" data-tip="Próg ostrzeżenia — email gdy napełnienie >= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_waste_high_warning_pct" name="alert_waste_high_warning_pct" value="$alert_waste_high_warning_pct" min="1" max="100" step="1">
+      </div>
+      <div class="form-group">
+        <label for="alert_waste_high_critical_pct">Critical (%)
+          <span class="tooltip" data-tip="Próg krytyczny — email gdy napełnienie >= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_waste_high_critical_pct" name="alert_waste_high_critical_pct" value="$alert_waste_high_critical_pct" min="1" max="100" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — przepełnienie deszczówki</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_rain_high_enabled" value="1" $alert_rain_high_enabled_checked>
+          Włączone
+          <span class="tooltip" data-tip="Włącza/wyłącza alerty email o przepełnieniu deszczówki">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="alert_rain_high_warning_pct">Warning (%)
+          <span class="tooltip" data-tip="Próg ostrzeżenia — email gdy napełnienie >= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_rain_high_warning_pct" name="alert_rain_high_warning_pct" value="$alert_rain_high_warning_pct" min="1" max="100" step="1">
+      </div>
+      <div class="form-group">
+        <label for="alert_rain_high_critical_pct">Critical (%)
+          <span class="tooltip" data-tip="Próg krytyczny — email gdy napełnienie >= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_rain_high_critical_pct" name="alert_rain_high_critical_pct" value="$alert_rain_high_critical_pct" min="1" max="100" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — niski poziom deszczówki</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_rain_low_enabled" value="1" $alert_rain_low_enabled_checked>
+          Włączone
+          <span class="tooltip" data-tip="Włącza/wyłącza alerty email o niskim poziomie deszczówki">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="alert_rain_low_warning_pct">Warning (%)
+          <span class="tooltip" data-tip="Próg ostrzeżenia — email gdy poziom <= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_rain_low_warning_pct" name="alert_rain_low_warning_pct" value="$alert_rain_low_warning_pct" min="0" max="100" step="1">
+      </div>
+      <div class="form-group">
+        <label for="alert_rain_low_critical_pct">Critical (%)
+          <span class="tooltip" data-tip="Próg krytyczny — email gdy poziom <= tej wartości">?</span>
+        </label>
+        <input type="number" id="alert_rain_low_critical_pct" name="alert_rain_low_critical_pct" value="$alert_rain_low_critical_pct" min="0" max="100" step="1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — czujniki</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_sensor_failure_enabled" value="1" $alert_sensor_failure_enabled_checked>
+          Awaria czujnika
+          <span class="tooltip" data-tip="Alert gdy czujnik nie odpowiada przez kilka kolejnych pomiarów (próg w sekcji Ogólne)">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_sensor_min_distance_enabled" value="1" $alert_sensor_min_distance_enabled_checked>
+          Minimalna odległość
+          <span class="tooltip" data-tip="Alert gdy odczyt czujnika spadnie poniżej minimalnej odległości — zbiornik prawie pełny lub czujnik zanurza się w wodzie">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_rain_instability_enabled" value="1" $alert_rain_instability_enabled_checked>
+          Niestabilność czujnika deszczówki
+          <span class="tooltip" data-tip="Alert gdy rozrzut odczytów czujnika deszczówki przekracza próg (np. podczas deszczu — fale na powierzchni wody). Detekcja działa zawsze, ten przełącznik kontroluje tylko wysyłkę emaila">?</span>
+        </label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — szambo (wywóz)</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_waste_anomaly_enabled" value="1" $alert_waste_anomaly_enabled_checked>
+          Anomalia zużycia
+          <span class="tooltip" data-tip="Alert gdy dzienne zużycie szamba jest anomalnie wysokie w porównaniu z 30-dniową średnią">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_pumpout_interval_enabled" value="1" $alert_pumpout_interval_enabled_checked>
+          Nietypowy interwał wywozu
+          <span class="tooltip" data-tip="Alert gdy odstęp między wywozami jest nietypowo krótki (możliwy wyciek) lub długi (zapomniano zamówić)">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_overdue_pumpout_enabled" value="1" $alert_overdue_pumpout_enabled_checked>
+          Zaległy wywóz
+          <span class="tooltip" data-tip="Alert gdy od ostatniego wywozu minęło znacznie więcej niż oczekiwany interwał i napełnienie rośnie">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_estimate_accuracy_enabled" value="1" $alert_estimate_accuracy_enabled_checked>
+          Dokładność estymacji
+          <span class="tooltip" data-tip="Informacja po wywozie szamba — porównanie estymowanej daty z rzeczywistą. Pomaga kalibrować predykcję">?</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="alert_pumpout_reminder_enabled" value="1" $alert_pumpout_reminder_enabled_checked>
+          Przypomnienie o wywozie
+          <span class="tooltip" data-tip="Email gdy estymowana data wywozu szamba jest za mniej niż 7 dni. Wysyłany raz dziennie">?</span>
+        </label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Alerty — ogólne</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="alert_cooldown_min">Cooldown alertów (min)
+          <span class="tooltip" data-tip="Minimalny odstęp między kolejnymi alertami tego samego typu. Zapobiega spamowaniu emailami">?</span>
+        </label>
+        <input type="number" id="alert_cooldown_min" name="alert_cooldown_min" value="$alert_cooldown_min" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="sensor_fail_threshold">Awaria czujnika po N błędach
+          <span class="tooltip" data-tip="Po ilu kolejnych nieudanych odczytach z czujnika wysyłany jest alert o awarii">?</span>
+        </label>
+        <input type="number" id="sensor_fail_threshold" name="sensor_fail_threshold" value="$sensor_fail_threshold" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="anomaly_threshold_factor">Mnożnik anomalii zużycia
+          <span class="tooltip" data-tip="Alert gdy dzienne zużycie szamba przekroczy średnią z 30 dni pomnożoną przez tę wartość. Np. 2.0 = alert gdy zużycie jest 2x wyższe niż zwykle">?</span>
+        </label>
+        <input type="number" id="anomaly_threshold_factor" name="anomaly_threshold_factor" value="$anomaly_threshold_factor" min="1" step="0.1">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>SMTP (email)</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="smtp_host">Serwer SMTP</label>
+        <input type="text" id="smtp_host" name="smtp_host" value="$smtp_host">
+      </div>
+      <div class="form-group">
+        <label for="smtp_port">Port SMTP</label>
+        <input type="number" id="smtp_port" name="smtp_port" value="$smtp_port" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label for="smtp_user">Użytkownik SMTP</label>
+        <input type="text" id="smtp_user" name="smtp_user" value="$smtp_user">
+      </div>
+      <div class="form-group">
+        <label for="smtp_pass">Hasło SMTP</label>
+        <input type="password" id="smtp_pass" name="smtp_pass" value="$smtp_pass">
+      </div>
+      <div class="form-group">
+        <label for="alert_to">Adres odbiorcy alertów</label>
+        <input type="email" id="alert_to" name="alert_to" value="$alert_to">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:10px;">
+      <button type="button" id="btn-test-email" class="btn-save" style="background:#2a9d8f;">Wyślij testowy email</button>
+      <span id="test-email-result" style="margin-left:10px;font-size:0.85em;"></span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Lokalizacja (pogoda)</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="location_lat">Szerokość geograficzna
+          <span class="tooltip" data-tip="Współrzędna do pobierania prognozy pogody i opadów z Open-Meteo API">?</span>
+        </label>
+        <input type="number" id="location_lat" name="location_lat" value="$location_lat" step="0.0001">
+      </div>
+      <div class="form-group">
+        <label for="location_lon">Długość geograficzna</label>
+        <input type="number" id="location_lon" name="location_lon" value="$location_lon" step="0.0001">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Serwer</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="server_port">Port HTTP</label>
+        <input type="number" id="server_port" name="server_port" value="$server_port" min="1" max="65535" step="1">
+      </div>
+    </div>
+    <p class="form-hint">Zmiana portu wymaga restartu serwera.</p>
+  </fieldset>
+
+  <div class="form-actions">
+    <button type="submit" class="btn-save">Zapisz</button>
+    <a href="/" class="btn-cancel">Anuluj</a>
+  </div>
+
+  </form>
+</div>
+<script>
+document.getElementById('btn-test-email').addEventListener('click', function() {
+  var btn = this;
+  var result = document.getElementById('test-email-result');
+  btn.disabled = true;
+  result.textContent = 'Wysyłanie...';
+  result.style.color = '#ccc';
+  fetch('/api/test-email', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        result.textContent = 'Wysłano pomyślnie';
+        result.style.color = '#2a9d8f';
+      } else {
+        result.textContent = 'Błąd: ' + data.error;
+        result.style.color = '#e74c3c';
+      }
+    })
+    .catch(function(e) {
+      result.textContent = 'Błąd połączenia';
+      result.style.color = '#e74c3c';
+    })
+    .finally(function() { btn.disabled = false; });
+});
+</script>
+</body>
+</html>

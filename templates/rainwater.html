@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deszczówka - monitoring</title>
+<meta http-equiv="refresh" content="60">
+<link rel="stylesheet" href="/static/style.css?v=16">
+</head>
+<body>
+<nav>
+  <a href="/">Szambo</a>
+  <a href="/rainwater" class="active">Deszczówka</a>
+  <a href="/diagnostics">Diagnostyka</a>
+  <a href="/settings">Ustawienia</a>
+</nav>
+<div class="hero-grid">
+  <div class="tank-card">
+    <h2>Deszczówka</h2>
+    <div class="tank-top"></div>
+    <div class="tank">
+      <div class="water water-rain" style="height: $rain_pct_num%"></div>
+      <div class="percent">$rain_pct%</div>
+    </div>
+    <div class="details">
+    Poziom: $rain_level_cm cm (~$rain_liters l)
+      $rain_min_line
+    </div>
+    $rain_error
+    $rain_status
+  </div>
+  <div class="sidebar">
+    <div class="sidebar-columns">
+      <div class="sidebar-left">
+        $rain_daily_stat
+        <div class="sidebar-divider"></div>
+        $forecast_html
+      </div>
+      <div class="sidebar-right">
+        <div class="section">
+          <h3 style="color:#48cae4;">Pompowania</h3>
+          $usage_total
+          $usage_list
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="range-bar">
+  <button onclick="changeRange('24h')" class="$active_24h" data-range="24h">24h</button>
+  <button onclick="changeRange('7d')" class="$active_7d" data-range="7d">7 dni</button>
+  <button onclick="changeRange('30d')" class="$active_30d" data-range="30d">30 dni</button>
+  <button onclick="changeRange('365d')" class="$active_365d" data-range="365d">Rok</button>
+</div>
+<div class="charts-grid">
+  <div class="chart-container">
+    <h2>Napełnienie (%)</h2>
+    <div id="chart-rain-svg">$rain_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2>Opady vs deszczówka</h2>
+    <div id="chart-rainfall-svg">$rainfall_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2>Efektywność zbierania (litry / mm opadów)</h2>
+    <div id="chart-rain-efficiency-svg">$rain_efficiency_svg</div>
+  </div>
+  <div class="chart-container">
+    <h2>Sezonowa analiza — zbieranie litrów na miesiąc</h2>
+    $seasonal_rain_svg
+  </div>
+</div>
+<script>
+function changeRange(range) {
+  document.querySelectorAll('.range-bar button').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.range === range);
+  });
+  fetch('/api/charts?page=rainwater&range=' + range)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('chart-rain-svg').innerHTML = data.rain_svg;
+      document.getElementById('chart-rainfall-svg').innerHTML = data.rainfall_svg;
+      document.getElementById('chart-rain-efficiency-svg').innerHTML = data.rain_efficiency_svg;
+      history.replaceState(null, '', '/rainwater?range=' + range);
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,558 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 0 24px;
+}
+nav {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 0;
+  justify-content: center;
+}
+nav a {
+  color: #aaa;
+  text-decoration: none;
+  padding: 10px 28px;
+  font-size: 0.95em;
+  background: #16213e;
+  border: 1px solid #333;
+  transition: background 0.2s, color 0.2s;
+}
+nav a:first-child { border-radius: 8px 0 0 8px; }
+nav a:last-child { border-radius: 0 8px 8px 0; }
+nav a:not(:first-child) { border-left: none; }
+nav a:not(:first-child):not(:last-child) { border-radius: 0; }
+nav a.active { background: #48cae4; color: #1a1a2e; font-weight: 600; border-color: #48cae4; }
+nav a:hover:not(.active) { background: #2a4a7f; color: #eee; }
+
+/* ─── Hero: tank card + sidebar ─────────────────────────────── */
+.hero-grid {
+  margin: 20px 0 10px;
+}
+.tank-card {
+  text-align: center;
+  background: #16213e;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.tank-card h2 {
+  margin-bottom: 12px;
+  font-size: 1.4em;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.tank {
+  position: relative;
+  width: 280px;
+  height: 244px;
+  margin: 0 auto;
+  border: 3px solid #555;
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  overflow: hidden;
+  background: #111;
+}
+.tank-top {
+  width: 300px;
+  height: 3px;
+  background: #555;
+  margin: 0 auto;
+  border-radius: 3px 3px 0 0;
+}
+.water {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transition: height 0.8s ease;
+  border-radius: 0 0 13px 13px;
+}
+.water-rain { background: linear-gradient(to top, #0077b6, #48cae4); }
+.water-waste { background: linear-gradient(to top, #5a3e1b, #a67c52); }
+.percent {
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.6em;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  z-index: 2;
+}
+.details {
+  margin-top: 14px;
+  font-size: 0.95em;
+  color: #aaa;
+  line-height: 1.8;
+}
+.error-msg { color: #e74c3c; margin-top: 12px; font-size: 0.9em; }
+.status-badge { display: block; margin-top: 6px; }
+
+/* ─── Sidebar (obok tank card na desktopie) ──────────────────── */
+.sidebar {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.sidebar-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.sidebar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+.sidebar-right {
+  border-left: 1px solid #2a3a5c;
+  padding-left: 24px;
+}
+.sidebar-divider {
+  border-top: 1px solid #2a3a5c;
+}
+
+/* ─── Range bar ──────────────────────────────────────────────── */
+.range-bar {
+  margin: 16px 0 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.range-bar a, .range-bar button {
+  color: #aaa;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #16213e;
+  font-size: 0.85em;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.range-bar a.active, .range-bar button.active { background: #48cae4; color: #1a1a2e; font-weight: 600; }
+.range-bar a:hover, .range-bar button:hover { background: #2a4a7f; color: #eee; }
+
+/* ─── Charts grid ────────────────────────────────────────────── */
+.charts-grid {
+  margin: 10px 0 20px;
+}
+.chart-container {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.chart-container h2 {
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 500;
+  font-size: 1.1em;
+}
+svg { width: 100%; height: auto; }
+
+/* ─── Sekcje (estymacja, wizyty) ─────────────────────────────── */
+.section {
+  width: 100%;
+  margin: 10px auto 10px;
+  padding: 0;
+}
+.sidebar .section {
+  margin: 0;
+}
+.section h3 {
+  text-align: center;
+  font-weight: 500;
+  font-size: 1em;
+  margin-bottom: 12px;
+  color: #aaa;
+}
+.pumpout-list {
+  list-style: none;
+  background: #16213e;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.sidebar .pumpout-list {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.pumpout-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #222;
+  font-size: 0.9em;
+  color: #ccc;
+}
+.pumpout-list li:last-child { border-bottom: none; }
+.pumpout-list .date { color: #eee; font-weight: 500; }
+.pumpout-list .drop { color: #a67c52; }
+.pumpout-empty { text-align: center; color: #666; font-size: 0.85em; }
+
+/* ─── Lista pompowań deszczówki ──────────────────────────────── */
+.usage-list {
+  list-style: none;
+  background: #16213e;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.sidebar .usage-list {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.usage-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #222;
+  font-size: 0.9em;
+  color: #ccc;
+}
+.usage-list li:last-child { border-bottom: none; }
+.usage-list .date { color: #eee; font-weight: 500; }
+.usage-list .usage-amount { color: #48cae4; font-weight: 600; }
+.usage-list .usage-detail { color: #888; font-size: 0.85em; }
+.usage-empty { text-align: center; color: #666; font-size: 0.85em; }
+.usage-total {
+  text-align: center;
+  font-size: 0.85em;
+  color: #48cae4;
+  margin-bottom: 8px;
+}
+.pumpout-estimate {
+  text-align: center;
+  margin-bottom: 6px;
+  padding: 14px 20px;
+  background: #16213e;
+  border-radius: 10px;
+  font-size: 0.95em;
+  color: #ccc;
+}
+.sidebar .pumpout-estimate {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+}
+.pumpout-estimate .date { color: #e74c3c; font-weight: 600; font-size: 1.1em; }
+.pumpout-estimate .label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 4px; }
+
+/* ─── Daily stat ─────────────────────────────────────────────── */
+.daily-stat {
+  border-radius: 10px;
+  padding: 14px 20px;
+  text-align: center;
+}
+.sidebar .daily-stat {
+  background: none;
+  padding: 0;
+}
+.daily-stat .stat-label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 4px; }
+.daily-stat .stat-value { font-size: 1.2em; font-weight: 600; }
+.daily-stat .stat-rising { color: #48cae4; }
+.daily-stat .stat-falling { color: #e9c46a; }
+.daily-stat .stat-na { color: #666; }
+
+/* ─── Prognoza pogody ────────────────────────────────────────── */
+.forecast-section {
+  width: 100%;
+  margin: 10px auto 6px;
+  padding: 0;
+}
+.sidebar .forecast-section {
+  margin: 0;
+}
+.forecast-section h3 {
+  text-align: center;
+  font-weight: 500;
+  font-size: 1em;
+  margin-bottom: 12px;
+  color: #48cae4;
+}
+.forecast-cards {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.forecast-card {
+  background: #16213e;
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 100px;
+  flex: 1;
+}
+
+/* ─── Tabela miesięczna / kosztów ────────────────────────────── */
+.monthly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+.monthly-table th {
+  color: #aaa;
+  font-weight: 500;
+  padding: 8px 6px;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+.monthly-table td {
+  padding: 6px;
+  text-align: center;
+  border-bottom: 1px solid #222;
+  color: #ccc;
+}
+.monthly-table td:first-child { text-align: left; color: #eee; font-weight: 500; }
+
+/* ─── Desktop (>900px): 2 kolumny ────────────────────────────── */
+@media (min-width: 901px) {
+  .hero-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 30px;
+    align-items: stretch;
+  }
+  .charts-grid {
+    display: block;
+  }
+  .chart-container {
+    margin-bottom: 16px;
+  }
+}
+
+/* ─── Tablet (601–900px): węższe marginesy, 1 kolumna ────────── */
+@media (min-width: 601px) and (max-width: 900px) {
+  .hero-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+}
+
+/* ─── Mobile (<600px) ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tank-card { margin: 14px auto 8px; }
+  .tank { width: 180px; height: 157px; border-radius: 0 0 16px 16px; }
+  .tank-top { width: 200px; }
+  .percent { font-size: 1.8em; }
+  nav a { padding: 8px 18px; font-size: 0.85em; }
+  .chart-container { padding: 14px 10px; }
+  .chart-container h2 { font-size: 0.95em; }
+  .section { padding: 0 10px; }
+  .range-bar { gap: 4px; }
+  .range-bar a, .range-bar button { padding: 5px 10px; font-size: 0.8em; }
+  .hero-grid { padding: 0; }
+  .charts-grid { padding: 0; }
+  .sidebar-columns {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .sidebar-right {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid #2a3a5c;
+    padding-top: 14px;
+  }
+}
+
+/* ─── Settings page ──────────────────────────────────────────── */
+.settings-page {
+  max-width: 720px;
+  margin: 30px auto 50px;
+}
+.settings-page h1 {
+  text-align: center;
+  font-weight: 500;
+  font-size: 1.4em;
+  margin-bottom: 24px;
+}
+.settings-page fieldset {
+  background: #16213e;
+  border: 1px solid #2a3a5c;
+  border-radius: 12px;
+  padding: 24px 32px;
+  margin-bottom: 20px;
+}
+.settings-page legend {
+  color: #48cae4;
+  font-weight: 600;
+  font-size: 0.95em;
+  padding: 0 10px;
+}
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.form-group {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #1a2744;
+}
+.form-group:last-child {
+  border-bottom: none;
+}
+.form-group label {
+  color: #ccc;
+  font-size: 0.88em;
+  font-weight: 400;
+  flex: 0 0 55%;
+  padding-right: 16px;
+}
+.tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2a3a5c;
+  color: #48cae4;
+  font-size: 0.75em;
+  font-weight: 700;
+  cursor: help;
+  margin-left: 4px;
+  vertical-align: middle;
+  position: relative;
+}
+.tooltip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0d1526;
+  color: #ccc;
+  border: 1px solid #48cae4;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  width: 280px;
+  z-index: 100;
+  white-space: normal;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+.form-group input {
+  background: #0d1526;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #eee;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  font-family: inherit;
+  flex: 1;
+  min-width: 0;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: #48cae4;
+  background: #111a2e;
+}
+.form-hint {
+  color: #555;
+  font-size: 0.78em;
+  margin-top: 10px;
+  text-align: center;
+  font-style: italic;
+}
+.form-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 30px;
+}
+.btn-save {
+  background: #48cae4;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 38px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.btn-save:hover { background: #3ab5d0; }
+.btn-cancel {
+  color: #aaa;
+  text-decoration: none;
+  padding: 11px 28px;
+  font-size: 0.95em;
+  border-radius: 8px;
+  background: #16213e;
+  border: 1px solid #333;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-cancel:hover { background: #2a4a7f; color: #eee; }
+.save-msg {
+  text-align: center;
+  color: #2a9d8f;
+  font-weight: 500;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(42, 157, 143, 0.1);
+  border-radius: 8px;
+  border: 1px solid #2a9d8f;
+}
+
+@media (max-width: 600px) {
+  .settings-page { margin: 14px 10px 30px; }
+  .settings-page fieldset { padding: 16px 16px; }
+  .form-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 8px 0;
+  }
+  .form-group label {
+    flex: none;
+    padding-right: 0;
+    font-size: 0.82em;
+    color: #aaa;
+  }
+}
+
+/* ─── Diagnostyka — tabele ───────────────────────────────────── */
+
+.diag-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9em;
+}
+.diag-table th,
+.diag-table td {
+  padding: 10px 24px 10px 0;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+.diag-table th:first-child,
+.diag-table td:first-child {
+  padding-left: 8px;
+  min-width: 160px;
+}
+.diag-table th {
+  color: #aaa;
+  font-weight: normal;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.diag-table tr:last-child td {
+  border-bottom: none;
+}

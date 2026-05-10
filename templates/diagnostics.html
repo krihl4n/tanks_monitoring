@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostyka - monitoring</title>
+<link rel="stylesheet" href="/static/style.css?v=16">
+</head>
+<body>
+<nav>
+  <a href="/">Szambo</a>
+  <a href="/rainwater">Deszczówka</a>
+  <a href="/diagnostics" class="active">Diagnostyka</a>
+  <a href="/settings">Ustawienia</a>
+</nav>
+<div class="settings-page">
+  <h1>Diagnostyka</h1>
+
+  <!-- ─── Status czujników ──────────────────────────────────── -->
+  <fieldset>
+    <legend>Status czujników</legend>
+    <table class="diag-table">
+      <thead>
+        <tr><th>Czujnik</th><th>Status</th><th>Błędy z rzędu</th><th>Min. odległość (historyczna)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Szambo</td>
+          <td>$waste_sensor_status</td>
+          <td>$waste_fail_count</td>
+          <td>$waste_min_ever cm</td>
+        </tr>
+        <tr>
+          <td>Deszczówka</td>
+          <td>$rain_sensor_status</td>
+          <td>$rain_fail_count</td>
+          <td>$rain_min_ever cm</td>
+        </tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- ─── Statystyki szambowozu ─────────────────────────────── -->
+  <fieldset>
+    <legend>Statystyki szambowozu</legend>
+    <table class="diag-table">
+      <tbody>
+        <tr><td>Ostatni wywóz</td><td>$last_pumpout_date</td></tr>
+        <tr><td>Dni od wywozu</td><td>$days_since_pumpout</td></tr>
+        <tr><td>Średni interwał</td><td>$avg_pumpout_interval dni</td></tr>
+        <tr><td>Liczba wywozów</td><td>$pumpout_count</td></tr>
+        <tr><td>Estymacja zapełnienia</td><td>$pumpout_estimate</td></tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- ─── Planowany wywóz ───────────────────────────────────── -->
+  <fieldset>
+    <legend>Planowany wywóz szamba</legend>
+    <div id="planned-pumpout-info">$planned_pumpout_html</div>
+    <div class="form-grid" style="margin-top:10px;">
+      <div class="form-group">
+        <label for="planned-date">Data wywozu</label>
+        <input type="date" id="planned-date" value="$planned_date_value">
+      </div>
+      <div class="form-group">
+        <label for="planned-note">Notatka (opcjonalnie)</label>
+        <input type="text" id="planned-note" placeholder="np. firma X, tel. 123..." value="$planned_note_value">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:10px;">
+      <button type="button" id="btn-save-planned" class="btn-save">Zapisz planowany wywóz</button>
+      <button type="button" id="btn-clear-planned" class="btn-save" style="background:#e74c3c;">Usuń</button>
+      <span id="planned-result" style="margin-left:10px;font-size:0.85em;"></span>
+    </div>
+  </fieldset>
+
+  <!-- ─── Anomalie zużycia ──────────────────────────────────── -->
+  <fieldset>
+    <legend>Anomalie zużycia</legend>
+    <table class="diag-table">
+      <tbody>
+        <tr><td>Dzienne zużycie (dziś)</td><td>$today_usage l</td></tr>
+        <tr><td>Średnia 30 dni</td><td>$avg_30d_usage l</td></tr>
+        <tr><td>Współczynnik</td><td>$usage_factor x</td></tr>
+        <tr><td>Status</td><td>$anomaly_status</td></tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- ─── Stan detekcji pompowania ──────────────────────────── -->
+  <fieldset>
+    <legend>Detekcja pompowania deszczówki</legend>
+    <table class="diag-table">
+      <tbody>
+        <tr><td>Aktualnie pompuje</td><td>$rain_pump_active</td></tr>
+        <tr><td>Ostatnie pompowanie</td><td>$last_rain_pump</td></tr>
+        <tr><td>Łącznie pompowań</td><td>$rain_pump_count</td></tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- ─── Niestabilność czujnika deszczówki ──────────────────── -->
+  <fieldset>
+    <legend>Niestabilność czujnika deszczówki</legend>
+    $instability_html
+  </fieldset>
+
+  <!-- ─── Historia alertów ──────────────────────────────────── -->
+  <fieldset>
+    <legend>Historia alertów (ostatnie 50)</legend>
+    $alert_log_html
+  </fieldset>
+
+</div>
+
+<script>
+document.getElementById('btn-save-planned').addEventListener('click', function() {
+  var date = document.getElementById('planned-date').value;
+  var note = document.getElementById('planned-note').value;
+  var result = document.getElementById('planned-result');
+  if (!date) { result.textContent = 'Wybierz datę'; result.style.color = '#e74c3c'; return; }
+  fetch('/api/planned-pumpout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({date: date, note: note})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      result.textContent = 'Zapisano';
+      result.style.color = '#2a9d8f';
+      setTimeout(function() { location.reload(); }, 1000);
+    } else {
+      result.textContent = 'Błąd: ' + data.error;
+      result.style.color = '#e74c3c';
+    }
+  })
+  .catch(function() { result.textContent = 'Błąd połączenia'; result.style.color = '#e74c3c'; });
+});
+
+document.getElementById('btn-clear-planned').addEventListener('click', function() {
+  var result = document.getElementById('planned-result');
+  fetch('/api/planned-pumpout', {method: 'DELETE'})
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      result.textContent = 'Usunięto';
+      result.style.color = '#2a9d8f';
+      setTimeout(function() { location.reload(); }, 1000);
+    }
+  })
+  .catch(function() { result.textContent = 'Błąd połączenia'; result.style.color = '#e74c3c'; });
+});
+</script>
+</body>
+</html>
