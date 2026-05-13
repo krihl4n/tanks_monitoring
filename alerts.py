@@ -81,6 +81,14 @@ def detect_pumpout(waste_pct, waste_dist):
                          max_pct, high_count, PUMPOUT_MIN_CONFIRM_READINGS)
             return
 
+        # Sprawdź czy min napełnienie było stabilne (nie jednorazowy spike w dół)
+        low_threshold = min_pct + settings["sensor_noise_cm"] / settings["tank_depth_cm"] * 100
+        low_count = sum(1 for v in readings_pct if v <= low_threshold)
+        if low_count < PUMPOUT_MIN_CONFIRM_READINGS:
+            logger.debug("Pominięto potencjalny pumpout — min %s%% potwierdzony tylko %d/%d odczytami",
+                         min_pct, low_count, PUMPOUT_MIN_CONFIRM_READINGS)
+            return
+
         # Znajdź odległości przy max i min napełnieniu
         dist_at_max = next(d for _, v, d in state.recent_readings if v == max_pct)
         dist_at_min = next(d for _, v, d in state.recent_readings if v == min_pct)

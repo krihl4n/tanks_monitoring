@@ -399,7 +399,18 @@ class MyServer(BaseHTTPRequestHandler):
         # Estymacja
         rows = load_history(days=30)
         est = estimate_pumpout_date()
-        pumpout_estimate = est if est else "brak danych"
+        if est is None:
+            pumpout_estimate = "brak danych"
+        elif est == "teraz":
+            pumpout_estimate = '<span style="color:#e74c3c;font-weight:bold;">Teraz — szambo pełne!</span>'
+        else:
+            pumpout_estimate = est.get("full_date", "—")
+            if est.get("service_date"):
+                pumpout_estimate += f' (wywóz: {est["service_date"]})'
+            if est.get("warning"):
+                pumpout_estimate += f'<br><span style="color:#e9c46a;font-size:0.85em;">{est["warning"]}</span>'
+            if est.get("planned_ok"):
+                pumpout_estimate += f'<br><span style="color:#2a9d8f;font-size:0.85em;">{est["planned_ok"]}</span>'
 
         # Anomalie zużycia
         daily_gain = calc_daily_waste_gain(rows)

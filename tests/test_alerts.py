@@ -33,11 +33,17 @@ class TestDetectPumpout(unittest.TestCase):
     def test_large_drop_detected(self, mock_acc, mock_int, mock_diag, mock_save):
         """Spadek >= PUMPOUT_DROP_PCT -> wykrycie szambowozu."""
         now = datetime.now()
+        low_pct = 80 - settings["pumpout_drop_pct"]
+        # 4 odczyty wysokie + 4 niskie (wymagane min 3 potwierdzenia obu)
         for i in range(4):
             pumpout_detector.recent_readings.append(
                 (now - timedelta(minutes=10-i), 80, 33)
             )
-        detect_pumpout(80 - settings["pumpout_drop_pct"], 130)
+        for i in range(3):
+            pumpout_detector.recent_readings.append(
+                (now - timedelta(minutes=5-i), low_pct, 130)
+            )
+        detect_pumpout(low_pct, 130)
         self.assertTrue(mock_save.called)
         self.assertTrue(mock_diag.called)
 
@@ -53,6 +59,21 @@ class TestDetectPumpout(unittest.TestCase):
                 (now - timedelta(minutes=10-i), 60, 66)
             )
         detect_pumpout(60 - settings["pumpout_drop_pct"] + 1, 100)
+        self.assertFalse(mock_save.called)
+
+    @patch("alerts.save_pumpout")
+    @patch("alerts.send_pumpout_diagnostic")
+    @patch("alerts.check_pumpout_interval_anomaly")
+    @patch("alerts.check_estimate_accuracy")
+    def test_single_spike_down_ignored(self, mock_acc, mock_int, mock_diag, mock_save):
+        """Jednorazowy spike do 0% nie powinien wykryć szambowozu."""
+        now = datetime.now()
+        # 5 odczytów stabilnych + 1 spike w dół
+        for i in range(5):
+            pumpout_detector.recent_readings.append(
+                (now - timedelta(minutes=10-i), 60, 66)
+            )
+        detect_pumpout(0, 181)  # spike
         self.assertFalse(mock_save.called)
 
     @patch("alerts.save_pumpout")

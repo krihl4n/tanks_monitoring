@@ -250,6 +250,19 @@ def estimate_pumpout_date():
     if len(points) < 2:
         return None
 
+    # Odrzuć outliers — punkty odchylone o > 3 * IQR od mediany
+    pcts = sorted(p for _, p in points)
+    n = len(pcts)
+    q1 = pcts[n // 4]
+    q3 = pcts[3 * n // 4]
+    iqr = q3 - q1
+    lower = q1 - 3 * max(iqr, 1)
+    upper = q3 + 3 * max(iqr, 1)
+    points = [(t, p) for t, p in points if lower <= p <= upper]
+
+    if len(points) < 2:
+        return None
+
     # Sprawdź czy mamy dane z min. PUMPOUT_ESTIMATE_MIN_DAYS dni
     span_days = (points[-1][0] - points[0][0]) / 86400
     if span_days < PUMPOUT_ESTIMATE_MIN_DAYS:
