@@ -1,7 +1,0 @@
-timestamp,alert_type,tank_name,level,message
-2026-05-07T14:10:25,rain_instability,Rainwater,warning,Deszczówka: niestabilny czujnik (rozrzut 6 cm)
-2026-05-07T19:36:48,rain_instability,Rainwater,warning,Deszczówka: niestabilny czujnik (rozrzut 143 cm)
-2026-05-07T23:55:12,low,Rainwater,critical,KRYTYCZNY: Deszczówka — niski poziom 0% (0 l)
-2026-05-08T06:33:20,low,Rainwater,critical,KRYTYCZNY: Deszczówka — niski poziom 0% (0 l)
-2026-05-08T11:56:34,rain_instability,Rainwater,warning,Deszczówka: niestabilny czujnik (rozrzut 14 cm)
-2026-05-09T20:56:21,anomaly,Waste,warning,Anomalia: szambo zapełnia się 2.0x szybciej niż zwykle

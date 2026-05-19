@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+
+# Dane CSV (generowane przez serwer)
+measurements.csv
+pumpouts.csv
+rain_usage.csv
+rain_instability.csv
+rainfall.csv
+alert_log.csv
+estimates.csv
+
+# Logi
+server.log
+server.log.*
+
+# Planowany wywóz (stan serwera)
+planned_pumpout.json
