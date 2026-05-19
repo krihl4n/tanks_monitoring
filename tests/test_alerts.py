@@ -144,7 +144,18 @@ class TestCheckTankAlert(unittest.TestCase):
         check_tank_alert("Waste", settings["alert_waste_high_warning_pct"])
         self.assertEqual(mock_send.call_count, 1)
         check_tank_alert("Waste", settings["alert_waste_high_critical_pct"])
-        self.assertEqual(mock_send.call_count, 2)  # inny level = inny cooldown
+        self.assertEqual(mock_send.call_count, 2)  # eskalacja warning -> critical
+
+    @patch("alerts.send_alert_email")
+    def test_reset_after_drop_below_threshold(self, mock_send):
+        """Po spadku poniżej progu, ponowne przekroczenie wysyła alert."""
+        check_tank_alert("Waste", settings["alert_waste_high_warning_pct"])
+        self.assertEqual(mock_send.call_count, 1)
+        # Spadek poniżej progu — reset
+        check_tank_alert("Waste", settings["alert_waste_high_warning_pct"] - 1)
+        # Ponowne przekroczenie — powinien wysłać znowu
+        check_tank_alert("Waste", settings["alert_waste_high_warning_pct"])
+        self.assertEqual(mock_send.call_count, 2)
 
     # ─── Deszczówka: przepełnienie ────────────────────────────────
 

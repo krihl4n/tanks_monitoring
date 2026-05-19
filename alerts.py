@@ -154,14 +154,26 @@ def send_alert_email(tank_name, pct, level, alert_type="high"):
 
 
 def _send_if_cooldown(cooldown_key, tank_name, pct, level, alert_type):
-    """Wysyła alert jeśli minął cooldown. Zwraca True jeśli wysłano."""
+    """Wysyła alert jeśli jeszcze nie wysłano dla tego poziomu.
+
+    Wysyła ponownie tylko gdy:
+    - Alert tego typu jeszcze nie był wysłany
+    - Poziom eskalował (warning -> critical)
+    - Poziom wcześniej spadł poniżej progu (reset) i znowu przekroczył
+    """
     now = datetime.now()
-    last = alert_state.tank_last_sent.get(cooldown_key)
-    if last and (now - last) < timedelta(minutes=settings["alert_cooldown_min"]):
+    last_level = alert_state.tank_last_sent.get(cooldown_key)
+    if last_level == level:
+        # Już wysłano alert tego samego poziomu — nie powtarzaj
         return False
     send_alert_email(tank_name, pct, level, alert_type)
-    alert_state.tank_last_sent[cooldown_key] = now
+    alert_state.tank_last_sent[cooldown_key] = level
     return True
+
+
+def _reset_alert(cooldown_key):
+    """Resetuje alert — poziom spadł poniżej progu."""
+    alert_state.tank_last_sent.pop(cooldown_key, None)
 
 
 def check_tank_alert(tank_name, pct):
@@ -195,15 +207,18 @@ def _check_high_alert(tank_name, pct, enabled_key, warning_key, critical_key):
 
     critical_pct = settings[critical_key]
     warning_pct = settings[warning_key]
+    cooldown_key = f"{tank_name}_high"
 
     if pct >= critical_pct:
-        level = "critical"
+        _send_if_cooldown(f"{cooldown_key}_critical", tank_name, pct, "critical", "high")
     elif pct >= warning_pct:
-        level = "warning"
+        _send_if_cooldown(f"{cooldown_key}_warning", tank_name, pct, "warning", "high")
+        # Spadł z critical -> warning: reset critical
+        _reset_alert(f"{cooldown_key}_critical")
     else:
-        return
-
-    _send_if_cooldown(f"{tank_name}_high_{level}", tank_name, pct, level, "high")
+        # Poniżej progu — reset obu
+        _reset_alert(f"{cooldown_key}_warning")
+        _reset_alert(f"{cooldown_key}_critical")
 
 
 def _check_low_alert(tank_name, pct):
@@ -213,15 +228,17 @@ def _check_low_alert(tank_name, pct):
 
     critical_pct = settings["alert_rain_low_critical_pct"]
     warning_pct = settings["alert_rain_low_warning_pct"]
+    cooldown_key = f"{tank_name}_low"
 
     if pct <= critical_pct:
-        level = "critical"
+        _send_if_cooldown(f"{cooldown_key}_critical", tank_name, pct, "critical", "low")
     elif pct <= warning_pct:
-        level = "warning"
+        _send_if_cooldown(f"{cooldown_key}_warning", tank_name, pct, "warning", "low")
+        _reset_alert(f"{cooldown_key}_critical")
     else:
-        return
-
-    _send_if_cooldown(f"{tank_name}_low_{level}", tank_name, pct, level, "low")
+        # Powyżej progu — reset obu
+        _reset_alert(f"{cooldown_key}_warning")
+        _reset_alert(f"{cooldown_key}_critical")
 
 
 # ─── Monitoring awarii czujników ──────────────────────────────────
