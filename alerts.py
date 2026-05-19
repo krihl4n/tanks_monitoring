@@ -26,17 +26,30 @@ logger = logging.getLogger("tanks")
 # ─── Wysyłanie email ─────────────────────────────────────────────
 
 
+def _get_smtp_credential(key):
+    """Zwraca credential SMTP z env var (priorytet) lub settings (fallback)."""
+    env_map = {"smtp_user": "SMTP_USER", "smtp_pass": "SMTP_PASS"}
+    env_var = env_map.get(key)
+    if env_var:
+        val = os.environ.get(env_var)
+        if val:
+            return val
+    return settings[key]
+
+
 def send_email(subject, body):
     """Wysyła email przez SMTP (Gmail). Wspólna funkcja dla wszystkich alertów."""
+    smtp_user = _get_smtp_credential("smtp_user")
+    smtp_pass = _get_smtp_credential("smtp_pass")
     msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = settings["smtp_user"]
+    msg["From"] = smtp_user
     msg["To"] = settings["alert_to"]
     try:
         with smtplib.SMTP(settings["smtp_host"], settings["smtp_port"]) as server:
             server.starttls()
-            server.login(settings["smtp_user"], settings["smtp_pass"])
-            server.sendmail(settings["smtp_user"], settings["alert_to"], msg.as_string())
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, settings["alert_to"], msg.as_string())
         logger.info("Email wysłany: %s", subject)
     except Exception as e:
         logger.error("Błąd wysyłania emaila '%s': %s", subject, e)
