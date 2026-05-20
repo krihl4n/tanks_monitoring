@@ -220,29 +220,40 @@ def _count_non_working_streak(start_date):
 
 
 def estimate_pumpout_date():
-    """Estymuje datę wezwania szambowozu na podstawie trendu liniowego z ostatnich 7 dni.
+    """Estymuje datę wezwania szambowozu na podstawie trendu liniowego.
+
+    Bierze dane od ostatniego wywozu (jeśli był) lub z ostatnich 7 dni.
+    Po wywozi estymacja bazuje wyłącznie na nowych danych (rosnący trend).
 
     Zwraca dict {"full_date": str, "service_date": str, "order_date": str,
     "warning": str|None} lub "teraz" lub None.
-
-    full_date — estymowana data zapełnienia do PUMPOUT_ESTIMATE_PCT.
-    service_date — kiedy wywóz (nie w niedzielę ani święto).
-    order_date — kiedy zamówić (2 dni robocze wcześniej, nie w dzień wolny).
-    warning — opcjonalne ostrzeżenie o długiej przerwie świątecznej.
-
-    Uwzględnia polskie święta ustawowe. Jeśli przed zapełnieniem wypada
-    przerwa >= 3 dni wolne z rzędu (np. Boże Narodzenie), sugeruje
-    wcześniejszy wywóz.
     """
-    rows = load_history(days=7)
+    # Ustal od kiedy brać dane — od ostatniego wywozu lub 7 dni
+    pumpouts = load_pumpouts()
+    last_pumpout_ts = None
+    if pumpouts:
+        try:
+            last_pumpout_ts = datetime.fromisoformat(pumpouts[-1]["timestamp"])
+            since_pumpout = datetime.now() - last_pumpout_ts
+            days = max(1, int(since_pumpout.total_seconds() / 86400) + 1)
+        except (ValueError, KeyError):
+            days = 7
+    else:
+        days = 7
+
+    rows = load_history(days=days)
 
     # Zbierz punkty (timestamp_sekundy, waste_pct)
+    # Odfiltruj dane sprzed ostatniego wywozu
+    pumpout_cutoff = last_pumpout_ts.timestamp() if last_pumpout_ts else 0
     points = []
     for row in rows:
         wp = row.get("waste_pct")
         if wp:
             try:
                 t = datetime.fromisoformat(row["timestamp"]).timestamp()
+                if t < pumpout_cutoff:
+                    continue
                 points.append((t, float(wp)))
             except (ValueError, KeyError):
                 continue

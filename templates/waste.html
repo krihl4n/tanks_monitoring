@@ -83,8 +83,16 @@ function changeRange(range) {
       document.getElementById('chart-waste-daily-title').textContent = data.waste_daily_title;
       document.getElementById('chart-waste-weekday-svg').innerHTML = data.waste_weekday_svg;
       history.replaceState(null, '', '/?range=' + range);
+      localStorage.setItem('range_waste', range);
     });
 }
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var saved = localStorage.getItem('range_waste');
+  if (!params.has('range') && saved && saved !== '30d') {
+    changeRange(saved);
+  }
+})();
 </script>
 </body>
 </html>

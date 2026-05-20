@@ -82,8 +82,16 @@ function changeRange(range) {
       document.getElementById('chart-rainfall-svg').innerHTML = data.rainfall_svg;
       document.getElementById('chart-rain-efficiency-svg').innerHTML = data.rain_efficiency_svg;
       history.replaceState(null, '', '/rainwater?range=' + range);
+      localStorage.setItem('range_rain', range);
     });
 }
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var saved = localStorage.getItem('range_rain');
+  if (!params.has('range') && saved && saved !== '30d') {
+    changeRange(saved);
+  }
+})();
 </script>
 </body>
 </html>

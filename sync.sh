@@ -12,6 +12,7 @@ case "$1" in
     rsync -av -e ssh \
       --exclude='sync.sh' \
       --exclude='planned_pumpout.json' \
+      --exclude='settings.json' \
       --exclude='*.csv' \
       --exclude='__pycache__' \
       --exclude='tests' \
