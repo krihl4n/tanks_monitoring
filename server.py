@@ -278,7 +278,7 @@ class MyServer(BaseHTTPRequestHandler):
                 daily_title = "Dzienne zużycie (litry)"
             data = {
                 "waste_svg": generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit,
-                                               sensor_max_pct=round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100),
+                                               sensor_max_pct=round((settings["tank_depth_cm"] + settings.get("sensor_offset_cm", 0) - settings["sensor_min_distance_cm"]) / settings["tank_depth_cm"] * 100),
                                                pumpout_cutoff=_last_pumpout_timestamp()),
                 "waste_daily_svg": generate_waste_daily_chart(days=days),
                 "waste_daily_title": daily_title,
@@ -681,7 +681,7 @@ class MyServer(BaseHTTPRequestHandler):
 
         # Charts
         rows = load_history(days=days)
-        waste_sensor_max_pct = round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100)
+        waste_sensor_max_pct = round((settings["tank_depth_cm"] + settings.get("sensor_offset_cm", 0) - settings["sensor_min_distance_cm"]) / settings["tank_depth_cm"] * 100)
         waste_svg = generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit,
                                        sensor_max_pct=waste_sensor_max_pct,
                                        pumpout_cutoff=_last_pumpout_timestamp())
@@ -868,6 +868,7 @@ class MyServer(BaseHTTPRequestHandler):
             },
             "tank_capacity_l": settings["tank_capacity_l"],
             "tank_depth_cm": settings["tank_depth_cm"],
+            "sensor_offset_cm": settings.get("sensor_offset_cm", 0),
         })
 
 

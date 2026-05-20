@@ -12,8 +12,10 @@ logger = logging.getLogger("tanks")
 def calc_percent(distance_cm, depth=None):
     if depth is None:
         depth = settings["tank_depth_cm"]
-    level = depth - distance_cm
-    level = max(0, min(level, depth))
+    offset = settings.get("sensor_offset_cm", 0)
+    effective_depth = depth + offset  # odległość czujnik -> dno
+    level = effective_depth - distance_cm
+    level = max(0, min(level, depth))  # cap na głębokość zbiornika (nie offset)
     pct = round(level / depth * 100)
     # Czujnik nie mierzy poniżej sensor_min_distance_cm — powyżej tego poziomu
     # nie znamy dokładnej wartości

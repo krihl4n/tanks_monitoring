@@ -33,6 +33,7 @@ SETTINGS_DEFAULTS = {
     # Zbiorniki
     "tank_depth_cm": 164,
     "tank_capacity_l": 9873,
+    "sensor_offset_cm": 0,
     "sensor_min_distance_cm": 20,
 
     # Filtrowanie

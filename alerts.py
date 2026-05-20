@@ -129,9 +129,11 @@ def send_pumpout_diagnostic(when, pct_before, pct_after, dist_before, dist_after
         f"Napełnienie po: {pct_after}%\n\n"
         f"Odległość czujnika przed: {dist_before} cm\n"
         f"Odległość czujnika po: {dist_after} cm\n\n"
-        f"Skonfigurowana głębokość zbiornika: {settings['tank_depth_cm']} cm\n\n"
-        f"Jeśli po opróżnieniu odległość czujnika ≈ głębokość zbiornika,\n"
-        f"to kalibracja jest poprawna. Jeśli nie — głębokość wymaga korekty.\n"
+        f"Skonfigurowana głębokość zbiornika: {settings['tank_depth_cm']} cm\n"
+        f"Offset czujnika: {settings.get('sensor_offset_cm', 0)} cm\n"
+        f"Oczekiwana odległość przy pustym zbiorniku: {settings['tank_depth_cm'] + settings.get('sensor_offset_cm', 0)} cm\n\n"
+        f"Jeśli po opróżnieniu odległość czujnika ≈ oczekiwanej,\n"
+        f"to kalibracja jest poprawna. Jeśli nie — głębokość lub offset wymaga korekty.\n"
     )
     send_email(subject, body)
     save_alert_log("pumpout_diagnostic", "Waste", "info", subject)

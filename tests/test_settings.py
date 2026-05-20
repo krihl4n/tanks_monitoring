@@ -123,7 +123,7 @@ class TestSettingsDefaults(unittest.TestCase):
         expected_keys = [
             "sensor_rain_ip", "sensor_waste_ip", "measure_interval", "sensor_read_count",
             "sensor_read_delay",
-            "tank_depth_cm", "tank_capacity_l", "sensor_min_distance_cm",
+            "tank_depth_cm", "tank_capacity_l", "sensor_offset_cm", "sensor_min_distance_cm",
             "spike_threshold_cm", "sensor_noise_cm",
             "pumpout_cost_pln", "pumpout_drop_pct", "pumpout_window_min", "pumpout_estimate_pct",
             "rain_pump_drop_pct", "rain_pump_window_min", "rain_pump_stable_count",

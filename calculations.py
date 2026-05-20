@@ -252,7 +252,7 @@ def extrapolate_current_pct():
     pumpout_cutoff = last_pumpout_ts.timestamp() if last_pumpout_ts else 0
 
     # Zbierz punkty — tylko te poniżej granicy czujnika (wiarygodne)
-    sensor_max_pct = round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100)
+    sensor_max_pct = round((settings["tank_depth_cm"] + settings.get("sensor_offset_cm", 0) - settings["sensor_min_distance_cm"]) / settings["tank_depth_cm"] * 100)
     points = []
     for row in rows:
         wp = row.get("waste_pct")
