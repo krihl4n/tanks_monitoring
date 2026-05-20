@@ -65,10 +65,18 @@ def calc_daily_waste_gain(rows):
 
 
 def find_min_sensor_record():
-    """Znajduje historycznie najniższy odczyt czujnika (= max napełnienie) dla każdego zbiornika.
+    """Znajduje najniższy odczyt czujnika (= max napełnienie) od ostatniego wywozu.
 
     Zwraca dict: {"rain": (distance, date_str), "waste": (distance, date_str)} lub None.
     """
+    pumpouts = load_pumpouts()
+    last_pumpout_ts = None
+    if pumpouts:
+        try:
+            last_pumpout_ts = pumpouts[-1]["timestamp"]
+        except (KeyError, IndexError):
+            pass
+
     rows = load_history(days=9999)
     rain_min = None
     waste_min = None
@@ -76,6 +84,7 @@ def find_min_sensor_record():
     for row in rows:
         try:
             ts = row["timestamp"]
+            # Dla waste: bierz dane tylko od ostatniego wywozu
             rd = row.get("rain_distance_cm")
             wd = row.get("waste_distance_cm")
             if rd and rd != "":
@@ -83,6 +92,8 @@ def find_min_sensor_record():
                 if rain_min is None or rd < rain_min[0]:
                     rain_min = (rd, ts)
             if wd and wd != "":
+                if last_pumpout_ts and ts < last_pumpout_ts:
+                    continue
                 wd = float(wd)
                 if waste_min is None or wd < waste_min[0]:
                     waste_min = (wd, ts)

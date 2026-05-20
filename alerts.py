@@ -112,6 +112,9 @@ def detect_pumpout(waste_pct, waste_dist):
         send_pumpout_diagnostic(now, max_pct, waste_pct, dist_at_max, dist_at_min)
         check_pumpout_interval_anomaly()
         check_estimate_accuracy()
+        # Reset stanu po wywozie
+        sensor_monitor.min_ever["Waste"] = None
+        sensor_monitor.min_alerted["Waste"] = False
         state.recent_readings = [(now, waste_pct, waste_dist)]
         state.cooldown_until = now + timedelta(minutes=30)
 
