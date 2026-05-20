@@ -115,6 +115,7 @@ def detect_pumpout(waste_pct, waste_dist):
         # Reset stanu po wywozie
         sensor_monitor.min_ever["Waste"] = None
         sensor_monitor.min_alerted["Waste"] = False
+        alert_state.last_estimate_save = None  # wymusi nowy zapis estymacji
         state.recent_readings = [(now, waste_pct, waste_dist)]
         state.cooldown_until = now + timedelta(minutes=30)
 
