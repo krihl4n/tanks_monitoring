@@ -58,7 +58,7 @@ from data import (
 from calculations import (
     calc_liters, find_min_sensor_record,
     calc_daily_stats, calc_daily_waste_gain, estimate_pumpout_date,
-    fetch_rainfall,
+    extrapolate_current_pct, fetch_rainfall,
 )
 from alerts import (
     detect_pumpout, detect_rain_pump, check_tank_alert,
@@ -164,6 +164,17 @@ def measurement_loop():
 
 
 
+def _last_pumpout_timestamp():
+    """Zwraca timestamp ostatniego wywozu lub None."""
+    pumpouts = load_pumpouts()
+    if pumpouts:
+        try:
+            return datetime.fromisoformat(pumpouts[-1]["timestamp"]).timestamp()
+        except (ValueError, KeyError):
+            pass
+    return None
+
+
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     """Serwer HTTP obsługujący żądania w osobnych wątkach."""
     daemon_threads = True
@@ -266,7 +277,9 @@ class MyServer(BaseHTTPRequestHandler):
             else:
                 daily_title = "Dzienne zużycie (litry)"
             data = {
-                "waste_svg": generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit),
+                "waste_svg": generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit,
+                                               sensor_max_pct=round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100),
+                                               pumpout_cutoff=_last_pumpout_timestamp()),
                 "waste_daily_svg": generate_waste_daily_chart(days=days),
                 "waste_daily_title": daily_title,
                 "waste_weekday_svg": generate_waste_weekday_chart(days=days),
@@ -586,10 +599,23 @@ class MyServer(BaseHTTPRequestHandler):
         waste_over = s["waste_over"]
         waste_err = s["waste_err"]
 
+        # Ekstrapolacja gdy czujnik przy granicy zakresu
+        extrapolated_pct = None
+        if waste_over:
+            try:
+                extrapolated_pct = extrapolate_current_pct()
+            except Exception:
+                pass
+
         # Status badge
         raw_waste = s["waste_dist"] if waste_err == "" else None
         waste_status = generate_tank_status_badge("Waste", waste_pct, raw_waste)
-        waste_sensor_note = '<div style="color:#e9c46a;font-size:0.8em;margin-top:6px;">Powyżej zakresu czujnika</div>' if waste_over else ""
+        if waste_over and extrapolated_pct:
+            waste_sensor_note = f'<div style="color:#e9c46a;font-size:0.8em;margin-top:6px;">Powyżej zakresu czujnika (estymacja z trendu: ~{extrapolated_pct}%)</div>'
+        elif waste_over:
+            waste_sensor_note = '<div style="color:#e9c46a;font-size:0.8em;margin-top:6px;">Powyżej zakresu czujnika</div>'
+        else:
+            waste_sensor_note = ""
 
         # Min record
         min_records = find_min_sensor_record()
@@ -655,7 +681,10 @@ class MyServer(BaseHTTPRequestHandler):
 
         # Charts
         rows = load_history(days=days)
-        waste_svg = generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit)
+        waste_sensor_max_pct = round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100)
+        waste_svg = generate_svg_chart(rows, "waste_pct", "#a67c52", "#a67c52", time_unit,
+                                       sensor_max_pct=waste_sensor_max_pct,
+                                       pumpout_cutoff=_last_pumpout_timestamp())
         waste_daily_svg = generate_waste_daily_chart(days=days)
         if days <= 1:
             waste_daily_title = "Zużycie per godzina (litry)"

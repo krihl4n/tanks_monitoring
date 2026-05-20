@@ -682,8 +682,14 @@ def generate_rain_efficiency_chart(days, *, load_rainfall, load_history, tank_ca
     return svg
 
 
-def generate_svg_chart(rows, value_key, line_color, fill_color, time_unit):
-    """Generuje wykres SVG po stronie serwera."""
+def generate_svg_chart(rows, value_key, line_color, fill_color, time_unit, sensor_max_pct=None, pumpout_cutoff=None):
+    """Generuje wykres SVG po stronie serwera.
+
+    sensor_max_pct — jeśli ustawiony, rysuje przerywaną linię ekstrapolacji
+    dla punktów powyżej granicy czujnika (na podstawie regresji z wiarygodnych danych).
+    pumpout_cutoff — timestamp ostatniego wywozu; regresja ekstrapolacji bierze
+    tylko dane od tego momentu.
+    """
     W, H = 900, 270
     PAD_L, PAD_R, PAD_T, PAD_B = 50, 20, 22, 45
 
@@ -751,10 +757,51 @@ def generate_svg_chart(rows, value_key, line_color, fill_color, time_unit):
         x_labels += f'<line x1="{x:.1f}" y1="{PAD_T}" x2="{x:.1f}" y2="{PAD_T + chart_h}" stroke="#333" stroke-width="1"/>'
         x_labels += f'<text x="{x:.1f}" y="{H - 8:.1f}" fill="#aaa" text-anchor="middle" font-size="11">{label}</text>'
 
+    # Ekstrapolacja powyżej granicy czujnika
+    extrapolation_svg = ""
+    if sensor_max_pct and any(v >= sensor_max_pct for _, v in points):
+        # Regresja z wiarygodnych punktów (poniżej granicy, po ostatnim wywozie)
+        reliable = [(t.timestamp(), v) for t, v in points
+                    if v < sensor_max_pct and (pumpout_cutoff is None or t.timestamp() >= pumpout_cutoff)]
+        if len(reliable) >= 2:
+            n_r = len(reliable)
+            s_t = sum(t for t, _ in reliable)
+            s_p = sum(p for _, p in reliable)
+            s_tp = sum(t * p for t, p in reliable)
+            s_t2 = sum(t * t for t, _ in reliable)
+            denom_r = n_r * s_t2 - s_t * s_t
+            if denom_r != 0:
+                a_r = (n_r * s_tp - s_t * s_p) / denom_r
+                b_r = (s_p - a_r * s_t) / n_r
+                if a_r > 0:
+                    # Rysuj ekstrapolację od pierwszego punktu przy granicy do końca wykresu
+                    extrap_parts = []
+                    in_extrap = False
+                    for t, v in points:
+                        if v >= sensor_max_pct:
+                            est_v = min(100, a_r * t.timestamp() + b_r)
+                            cmd = "M" if not in_extrap else "L"
+                            extrap_parts.append(f"{cmd}{tx(t):.1f},{ty(est_v):.1f}")
+                            in_extrap = True
+                        else:
+                            in_extrap = False
+                    if extrap_parts:
+                        # Linia granicy czujnika
+                        gy = ty(sensor_max_pct)
+                        extrapolation_svg = (
+                            f'<line x1="{PAD_L}" y1="{gy:.1f}" x2="{W - PAD_R}" y2="{gy:.1f}" '
+                            f'stroke="#e9c46a" stroke-width="1" stroke-dasharray="6,4" opacity="0.5"/>'
+                            f'<text x="{W - PAD_R - 4}" y="{gy - 4:.1f}" fill="#e9c46a" '
+                            f'text-anchor="end" font-size="10" opacity="0.7">maks. czujnika</text>'
+                            f'<path d="{"".join(extrap_parts)}" fill="none" '
+                            f'stroke="{line_color}" stroke-width="2" stroke-dasharray="6,3" opacity="0.6"/>'
+                        )
+
     svg = f'''<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">
   {y_labels}
   {x_labels}
   <path d="{fill_path}" fill="{fill_color}" opacity="0.3"/>
   <path d="{line_path}" fill="none" stroke="{line_color}" stroke-width="2"/>
+  {extrapolation_svg}
 </svg>'''
     return svg

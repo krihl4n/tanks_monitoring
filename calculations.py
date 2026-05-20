@@ -230,6 +230,71 @@ def _count_non_working_streak(start_date):
     return count
 
 
+def extrapolate_current_pct():
+    """Estymuje aktualny % napełnienia szamba na podstawie trendu (regresja liniowa).
+
+    Używane gdy czujnik jest przy granicy zakresu i nie mierzy dokładnie.
+    Bierze dane od ostatniego wywozu (min 3 dni). Zwraca int lub None.
+    """
+    pumpouts = load_pumpouts()
+    last_pumpout_ts = None
+    if pumpouts:
+        try:
+            last_pumpout_ts = datetime.fromisoformat(pumpouts[-1]["timestamp"])
+            since_pumpout = datetime.now() - last_pumpout_ts
+            days = max(1, int(since_pumpout.total_seconds() / 86400) + 1)
+        except (ValueError, KeyError):
+            days = 7
+    else:
+        days = 7
+
+    rows = load_history(days=days)
+    pumpout_cutoff = last_pumpout_ts.timestamp() if last_pumpout_ts else 0
+
+    # Zbierz punkty — tylko te poniżej granicy czujnika (wiarygodne)
+    sensor_max_pct = round((1 - settings["sensor_min_distance_cm"] / settings["tank_depth_cm"]) * 100)
+    points = []
+    for row in rows:
+        wp = row.get("waste_pct")
+        if wp:
+            try:
+                t = datetime.fromisoformat(row["timestamp"]).timestamp()
+                if t < pumpout_cutoff:
+                    continue
+                pct = float(wp)
+                if pct < sensor_max_pct:
+                    points.append((t, pct))
+            except (ValueError, KeyError):
+                continue
+
+    if len(points) < 2:
+        return None
+
+    span_days = (points[-1][0] - points[0][0]) / 86400
+    if span_days < PUMPOUT_ESTIMATE_MIN_DAYS:
+        return None
+
+    # Regresja liniowa
+    n = len(points)
+    sum_t = sum(t for t, _ in points)
+    sum_p = sum(p for _, p in points)
+    sum_tp = sum(t * p for t, p in points)
+    sum_t2 = sum(t * t for t, _ in points)
+    denom = n * sum_t2 - sum_t * sum_t
+    if denom == 0:
+        return None
+
+    a = (n * sum_tp - sum_t * sum_p) / denom
+    b = (sum_p - a * sum_t) / n
+
+    if a <= 0:
+        return None  # trend spadkowy — ekstrapolacja nie ma sensu
+
+    now_t = datetime.now().timestamp()
+    estimated = round(a * now_t + b)
+    return max(estimated, sensor_max_pct)  # nie mniej niż to co czujnik mierzy
+
+
 def estimate_pumpout_date():
     """Estymuje datę wezwania szambowozu na podstawie trendu liniowego.
 

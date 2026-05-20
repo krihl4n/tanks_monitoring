@@ -152,8 +152,8 @@ def generate_rain_efficiency_chart(days):
         tank_capacity_l=settings["tank_capacity_l"])
 
 
-def generate_svg_chart(rows, value_key, line_color, fill_color, time_unit):
-    return _charts.generate_svg_chart(rows, value_key, line_color, fill_color, time_unit)
+def generate_svg_chart(rows, value_key, line_color, fill_color, time_unit, **kwargs):
+    return _charts.generate_svg_chart(rows, value_key, line_color, fill_color, time_unit, **kwargs)
 
 
 # ─── Tabela miesięczna ────────────────────────────────────────────
