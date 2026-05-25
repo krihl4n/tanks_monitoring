@@ -115,7 +115,10 @@ def find_min_sensor_record():
 
 
 def calc_daily_stats():
-    """Oblicza średnie dzienne tempo zmian napełnienia z ostatnich 7 dni.
+    """Oblicza średnie dzienne tempo zmian napełnienia.
+
+    Dla szamba bierze dane od ostatniego wywozu (nie z 7 dni na sztywno),
+    żeby wypompowanie nie zaburzało statystyk.
 
     Zwraca (rain_daily_liters, waste_daily_liters):
       - ujemne = zużycie/spadek
@@ -125,6 +128,16 @@ def calc_daily_stats():
     rows = load_history(days=7)
     rain_points = []
     waste_points = []
+
+    # Ustal cutoff dla szamba — dane tylko od ostatniego wywozu
+    pumpouts = load_pumpouts()
+    waste_cutoff = 0
+    if pumpouts:
+        try:
+            waste_cutoff = datetime.fromisoformat(pumpouts[-1]["timestamp"]).timestamp()
+        except (ValueError, KeyError):
+            pass
+
     for row in rows:
         try:
             ts = datetime.fromisoformat(row["timestamp"]).timestamp()
@@ -135,7 +148,7 @@ def calc_daily_stats():
         rain_unstable = row.get("rain_unstable") == "1"
         if rp and not rain_unstable:
             rain_points.append((ts, float(rp)))
-        if wp:
+        if wp and ts >= waste_cutoff:
             waste_points.append((ts, float(wp)))
 
     def daily_change(points):
